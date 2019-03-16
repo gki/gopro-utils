@@ -56,7 +56,7 @@ func main() {
 		telems := t_prev.ShitJson()
 
 		for i, _ := range telems {
-			if telems[i].GpsAccuracy == 9999 {
+			if telems[i].GpsAccuracy == 0 || telems[i].GpsAccuracy == 9999 {
 				// Invalid GPS accuracy
 				continue
 			}
