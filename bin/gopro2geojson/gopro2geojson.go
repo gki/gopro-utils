@@ -32,6 +32,8 @@ func main() {
 	t_prev := &telemetry.TELEM{}
 
 	var coordinates [][]float64
+	var absoluteUtcMicroSec []int64
+	var relativeMicroSec []int64
 
 	for {
 		t, err = telemetry.Read(telemFile)
@@ -59,8 +61,16 @@ func main() {
 				continue
 			}
 
+			// longitude, latitude
 			longLat := []float64{telems[i].Longitude, telems[i].Latitude}
 			coordinates = append(coordinates, longLat)
+			// timestamp
+			var relGap int64 = 0
+			if len(absoluteUtcMicroSec) > 0 {
+				relGap = telems[i].TS - absoluteUtcMicroSec[0]
+			}
+			relativeMicroSec = append(relativeMicroSec, relGap)
+			absoluteUtcMicroSec = append(absoluteUtcMicroSec, telems[i].TS)
 		}
 
 		*t_prev = *t
@@ -82,8 +92,14 @@ func main() {
 	}(jsonFile)
 
 	g := geojson.NewLineStringFeature(coordinates)
+	g.SetProperty("AbsoluteUtcMicroSec", absoluteUtcMicroSec)
+	g.SetProperty("RelativeMicroSec", relativeMicroSec)
 	if err := json.NewEncoder(jsonFile).Encode(g); err != nil {
 		fmt.Println("Error encoding output json", err)
 		os.Exit(1)
 	}
+
+	fmt.Println("Data count")
+	fmt.Printf("Coordinates: %d, AbsoluteUtcMicroSec: %d, RelativeMicroSec: %d\n",
+		len(coordinates), len(absoluteUtcMicroSec), len(relativeMicroSec))
 }
